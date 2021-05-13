@@ -1,6 +1,6 @@
 import './App.css';
 import React from 'react';
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+import { createFFmpeg } from '@ffmpeg/ffmpeg';
 // import exampleMp4 from './static/example.mp4';
 
 interface IProps {
@@ -22,7 +22,7 @@ class App extends React.Component<IProps, IState> {
     this.onChangeFile = this.onChangeFile.bind(this);
   }
 
-  _runSuccess = false
+  // _runSuccess = false
 
   componentDidMount() {
     this.setState({
@@ -47,22 +47,23 @@ class App extends React.Component<IProps, IState> {
         if (e.target?.result instanceof ArrayBuffer) {
           const arrayBuffer = e.target?.result;
           const data = new Uint8Array(arrayBuffer);
-          // 获取视频时长
-          const videoDom = document.createElement('video');
-          videoDom.src = URL.createObjectURL(file);
-          videoDom.onloadeddata = () => {
-            const duration = videoDom.duration;
-            this.setState({
-              log: this.state.log + `\n[${new Date().toLocaleTimeString()}]视频读取完成，时长：${duration}s，开始加载ffmpeg`
-            });
-            this._getFrames(duration, data);
-          }
+          // // 获取视频时长
+          // const videoDom = document.createElement('video');
+          // videoDom.src = URL.createObjectURL(file);
+          // videoDom.onloadeddata = () => {
+          //   const duration = videoDom.duration;
+          //   this.setState({
+          //     log: this.state.log + `\n[${new Date().toLocaleTimeString()}]视频读取完成，时长：${duration}s，开始加载ffmpeg`
+          //   });
+          //   this._getFrames(duration, data);
+          // }
+          this._getFrames(data);
         }
       }
     }
   }
 
-  async _getFrames(duration: number, videoData?: Uint8Array) {
+  async _getFrames( videoData?: Uint8Array) {
     // 加载ffmpeg
     let ffmpeg = createFFmpeg({ log: true });
     await ffmpeg.load();
@@ -80,9 +81,10 @@ class App extends React.Component<IProps, IState> {
 
     // 截帧
     const frameNum = 8;
-    const per = (1 / (duration / frameNum)).toFixed(2);
+    // let per: string|number = 1 / (duration / frameNum);
+    // per = (per < 0.01 ? 0.01 : per).toFixed(2);
     this.setState({
-      log: this.state.log + `\n[${new Date().toLocaleTimeString()}]开始截帧，每1秒截${per}帧，共截${frameNum}帧`
+      log: this.state.log + `\n[${new Date().toLocaleTimeString()}]开始截帧，截关键帧（I帧），共截${frameNum}帧`
     });
     // setTimeout(() => {
     //   // 超时处理
@@ -93,8 +95,9 @@ class App extends React.Component<IProps, IState> {
     //     });
     //   }
     // }, 2000);
-    await ffmpeg.run('-i', 'example.mp4', '-r', per, '-f', 'image2', '-frames', `${frameNum}`, 'frame-%04d.jpg');
-    this._runSuccess = true;
+    // await ffmpeg.run('-i', 'example.mp4', '-r', per, '-f', 'image2', '-frames', `${frameNum}`, 'frame-%04d.jpg'); // 均匀截帧
+    await ffmpeg.run('-i', 'example.mp4', '-vf', "select='eq(pict_type\,I)'", '-vsync', '2', '-f', 'image2', '-frames', `${frameNum}`, 'frame-%04d.jpg');
+    // this._runSuccess = true;
     this.setState({
       log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截帧完成`
     });
