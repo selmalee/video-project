@@ -23,6 +23,7 @@ class App extends React.Component<IProps, IState> {
   }
 
   // _runSuccess = false
+  _ffmpeg = createFFmpeg({ log: true })
 
   componentDidMount() {
     this.setState({
@@ -47,75 +48,73 @@ class App extends React.Component<IProps, IState> {
         if (e.target?.result instanceof ArrayBuffer) {
           const arrayBuffer = e.target?.result;
           const data = new Uint8Array(arrayBuffer);
-          // // 获取视频时长
-          // const videoDom = document.createElement('video');
-          // videoDom.src = URL.createObjectURL(file);
-          // videoDom.onloadeddata = () => {
-          //   const duration = videoDom.duration;
-          //   this.setState({
-          //     log: this.state.log + `\n[${new Date().toLocaleTimeString()}]视频读取完成，时长：${duration}s，开始加载ffmpeg`
-          //   });
-          //   this._getFrames(duration, data);
-          // }
-          this._getFrames(data);
+          // 获取视频时长
+          const videoDom = document.createElement('video');
+          videoDom.src = URL.createObjectURL(file);
+          videoDom.onloadeddata = () => {
+            const duration = videoDom.duration;
+            this.setState({
+              log: this.state.log + `\n[${new Date().toLocaleTimeString()}]视频读取完成，时长：${duration / 60}min，开始加载ffmpeg`
+            });
+            this._getFrames(duration, data);
+          }
+          // this._getFrames(25, data);
+          // this.setState({
+          //   log: this.state.log + `\n[${new Date().toLocaleTimeString()}]视频读取完成，开始加载ffmpeg`
+          // });
         }
       }
     }
   }
 
-  async _getFrames( videoData?: Uint8Array) {
+  async _getFrames(duration: number, videoData?: Uint8Array) {
     // 加载ffmpeg
-    let ffmpeg = createFFmpeg({ log: true });
-    await ffmpeg.load();
-    console.log('ffmpeg', ffmpeg)
+    if (!this._ffmpeg.isLoaded()) {
+      await this._ffmpeg.load();
+    }
     this.setState({
       log: this.state.log + `\n[${new Date().toLocaleTimeString()}]ffmpeg加载完成`
     });
 
     // 读取视频数据
     // if (videoData) {
-    ffmpeg.FS('writeFile', 'example.mp4', videoData); // 先保存到MEMFS
+    this._ffmpeg.FS('writeFile', 'example.mp4', videoData); // 先保存到MEMFS
     // } else {
-    //   ffmpeg.FS('writeFile', 'example.mp4', await fetchFile(exampleMp4)); // 先保存到MEMFS
+    //   this._ffmpeg.FS('writeFile', 'example.mp4', await fetchFile(exampleMp4)); // 先保存到MEMFS
     // }
 
     // 截帧
     const frameNum = 8;
+    const per = Math.floor(duration / frameNum);
+    this.setState({
+      log: this.state.log + `\n[${new Date().toLocaleTimeString()}]开始截帧，每${per}秒截1帧，截关键帧（I帧），共截${frameNum}帧`
+    });
     // let per: string|number = 1 / (duration / frameNum);
     // per = (per < 0.01 ? 0.01 : per).toFixed(2);
-    this.setState({
-      log: this.state.log + `\n[${new Date().toLocaleTimeString()}]开始截帧，截关键帧（I帧），共截${frameNum}帧`
-    });
-    // setTimeout(() => {
-    //   // 超时处理
-    //   if (!this._runSuccess) {
-    //     ffmpeg = null;
-    //     this.setState({
-    //       log: this.state.log + `\n[${new Date().toLocaleTimeString()}]超时`
-    //     });
-    //   }
-    // }, 2000);
-    // await ffmpeg.run('-i', 'example.mp4', '-r', per, '-f', 'image2', '-frames', `${frameNum}`, 'frame-%04d.jpg'); // 均匀截帧
-    await ffmpeg.run('-i', 'example.mp4', '-vf', "select='eq(pict_type\,I)'", '-vsync', '2', '-f', 'image2', '-frames', `${frameNum}`, 'frame-%04d.jpg');
-    // this._runSuccess = true;
-    this.setState({
-      log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截帧完成`
-    });
+    // this.setState({
+    //   log: this.state.log + `\n[${new Date().toLocaleTimeString()}]开始截帧，每1秒截${per}帧，截关键帧（I帧），共截${frameNum}帧`
+    // });
+    // await this._ffmpeg.run('-i', 'example.mp4', '-r', per, '-vf', "select='eq(pict_type\,I)'", '-f', 'image2', '-frames', `${frameNum}`, 'frame-%04d.jpg'); 
     
     // 渲染图片
     let frames = [];
     for (let i = 0; i < frameNum; i++) {
-      const frameData = ffmpeg.FS('readFile',`frame-000${i + 1}.jpg`); // 从MEMFS获取图片二进制数据Uint8Array
+      const fileName = `frame-000${i + 1}.jpg`;
+      // API文档：https://www.ffmpeg.org/ffmpeg.html
+      // ffmpeg-filter： http://ffmpeg.org/ffmpeg-filters.html
+      await this._ffmpeg.run('-ss', `${per * i}`, '-i', 'example.mp4', '-vf', "select='eq(pict_type,I)'", '-vsync', '2', '-f', 'image2', '-frames', `1`, fileName);
+      const frameData = this._ffmpeg.FS('readFile', fileName); // 从MEMFS获取图片二进制数据Uint8Array
       const src = URL.createObjectURL(
-        new Blob([frameData.buffer], { type: 'image/png' })
+        new Blob([frameData.buffer], { type: 'image/jpg' })
       ); // Uint8Array转成dataURL
       frames.push(src);
-      ffmpeg.FS('unlink', `frame-000${i + 1}.jpg`); // 从MEMFS中删除
+      this._ffmpeg.FS('unlink', fileName); // 从MEMFS中删除
     }
     this.setState({
       frames,
+      log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截帧完成`,
     });
-    ffmpeg.FS('unlink', 'example.mp4');
+    this._ffmpeg.FS('unlink', 'example.mp4');
   }
 
   render() {
