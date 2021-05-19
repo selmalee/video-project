@@ -7,10 +7,10 @@
 
 .frame {
   display: inline-block;
-  margin-right: 20px;
-  width: 200px;
-  height: 200px;
-  background-color: grey;
+  margin: 20px 20px 0 0;
+  width: 240px;
+  height: 240px;
+  border: 1px solid #ddd;
 }
 .frame img {
   width: 100%;
