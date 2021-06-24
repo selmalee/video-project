@@ -59,7 +59,7 @@ class App extends React.Component<IProps, IState> {
 
   _createFFmpeg() {
     return createFFmpeg({
-      log: true,
+      log: false,
       logger: this._ffmpegLogger.bind(this),
     });
   }
@@ -118,7 +118,7 @@ class App extends React.Component<IProps, IState> {
       await this._ffmpeg.run('-i', 'example.mp4', '-loglevel', 'info');
       this._ffmpeg.setLogger(() => {});
       this.setState({
-        log: this.state.log + `\n[${new Date().toLocaleTimeString()}]时长：${(this._duration / 60).toFixed(2)}min，开始加载ffmpeg`
+        log: this.state.log + `\n[${new Date().toLocaleTimeString()}]时长：${(this._duration / 60).toFixed(2)}min，分辨率：${this._resolution}，开始加载ffmpeg`
       });
       // 截帧
       await this._getFrames();
@@ -128,6 +128,7 @@ class App extends React.Component<IProps, IState> {
       this._timeout = setTimeout(() => {
         if (!this._success) {
           this._ffmpeg.exit();
+          this._ffmpeg = null;
           this.setState({
             log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截图超时，终止ffmpeg运行`
           });
@@ -139,7 +140,6 @@ class App extends React.Component<IProps, IState> {
       this.setState({
         log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截图终止，错误：${e.message}，终止ffmpeg`
       });
-      this._ffmpeg.exit();
     }
   }
 
@@ -181,7 +181,7 @@ class App extends React.Component<IProps, IState> {
       const fileName = `frame-${this._getFrameFileNum(i + 1, fileLen)}.jpg`;
       // API文档：https://www.ffmpeg.org/ffmpeg.html
       // ffmpeg-filter： http://ffmpeg.org/ffmpeg-filters.html
-      await this._ffmpeg.run('-ss', `${Math.floor(per * i)}`, '-threads', '3', '-y', '-loglevel', 'error', '-i', 'example.mp4', '-s', this._resolution,  '-f', 'image2', '-frames', `1`, fileName);
+      await this._ffmpeg.run('-ss', `${Math.floor(per * i)}`, '-threads', '3', '-y', '-loglevel', 'quiet', '-i', 'example.mp4', '-s', this._resolution,  '-f', 'image2', '-frames', `1`, fileName);
       // '-vf', "select='eq(pict_type,I)'",
     }
     this._ffmpeg.FS('unlink', 'example.mp4');
