@@ -48,7 +48,7 @@ class App extends React.Component<IProps, IState> {
   _duration = 0
   _resolution = ''
   _ffmpeg = this._createFFmpeg();
-  _timeout?: NodeJS.Timeout = undefined
+  _timeout?: any = undefined
 
   componentDidMount() {
     this.setState({
