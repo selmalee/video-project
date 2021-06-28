@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { createRef, RefObject } from 'react';
 import flvjs from 'flv.js/dist/flv.js';
+import './index.css';
 
 interface IProps {
-
 }
 
 interface IState {
@@ -16,14 +16,16 @@ class Live extends React.Component<IProps, IState> {
     };
   }
 
+  _videoRef = (createRef() as RefObject<HTMLVideoElement>);
+
   componentDidMount() {
     // console.log('flvjs', flvjs)
     if (flvjs.isSupported()) {
-      const videoElement = (document.getElementById('videoElement') as HTMLMediaElement);
+      const videoElement = this._videoRef.current;
       try {
         const flvPlayer = flvjs.createPlayer({
           type: 'flv',
-          url: 'http://159.75.213.179/flv/test?app=live0'
+          url: 'https://seminelee.com/flv?app=live&stream=test'
         });
         flvPlayer.attachMediaElement(videoElement);
         flvPlayer.load();
@@ -37,7 +39,7 @@ class Live extends React.Component<IProps, IState> {
   render() {
     return (
       <div>
-        <video id="videoElement" controls={true}></video>
+        <video ref={this._videoRef} className="video" controls={true} muted={true}></video>
       </div>
     );
   }
