@@ -45,6 +45,7 @@ class Frame extends React.Component<IProps, IState> {
     return createFFmpeg({
       log: false,
       logger: this._ffmpegLogger.bind(this),
+      mainName: 'main',
     });
   }
 
@@ -121,6 +122,7 @@ class Frame extends React.Component<IProps, IState> {
 
     } catch(e) {
       // 报错，终止ffmpeg
+      console.error(e)
       this.setState({
         log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截图终止，错误：${e.message}，终止ffmpeg`
       });

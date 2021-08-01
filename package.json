@@ -1,6 +1,7 @@
 {
   "version": "0.0.0",
   "scripts": {
+    "start": "vite --force",
     "dev": "vite",
     "build": "tsc --skipLibCheck && vite build",
     "serve": "vite preview"
