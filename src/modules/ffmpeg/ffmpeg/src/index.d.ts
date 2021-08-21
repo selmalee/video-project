@@ -20,6 +20,7 @@ export interface CreateFFmpegOptions {
     logger?: LogCallback;
     /** a function to trace the progress, a quick example is p => console.log(p) */
     progress?: ProgressCallback;
+    mainName?: string;
 }
 
 export interface FFmpeg {

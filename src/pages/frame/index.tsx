@@ -31,14 +31,16 @@ class Frame extends React.Component<IProps, IState> {
   _success = false
   _duration = 0
   _resolution = ''
-  _ffmpeg = this._createFFmpeg();
+  _ffmpeg?: any = this._createFFmpeg();
   _timeout?: any = undefined
 
   componentDidMount() {
     this.setState({
       log: this.state.log + `[${new Date().toLocaleTimeString()}]componentDidMount`
     });
-    this._ffmpeg.load();
+    if (this._ffmpeg) {
+      this._ffmpeg.load();
+    }
   }
 
   _createFFmpeg() {
@@ -90,6 +92,9 @@ class Frame extends React.Component<IProps, IState> {
 
       const bufferArr = (await this._fileToUint8Array(file) as Uint8Array);
       // 加载ffmpeg
+      if (!this._ffmpeg) {
+        this._ffmpeg = createFFmpeg();
+      }
       if (!this._ffmpeg.isLoaded()) {
         await this._ffmpeg.load();
       }
@@ -111,9 +116,9 @@ class Frame extends React.Component<IProps, IState> {
 
       // 超时处理
       this._timeout = setTimeout(() => {
-        if (!this._success) {
+        if (!this._success && this._ffmpeg) {
           this._ffmpeg.exit();
-          this._ffmpeg = null;
+          this._ffmpeg = undefined;
           this.setState({
             log: this.state.log + `\n[${new Date().toLocaleTimeString()}]截图超时，终止ffmpeg运行`
           });
@@ -150,6 +155,9 @@ class Frame extends React.Component<IProps, IState> {
     }
     if (!this._resolution) {
       throw new Error('no resolution');
+    }
+    if (!this._ffmpeg) {
+      throw new Error('no _ffmpeg');
     }
     // 截帧
     // const isGetScore = this._duration > 50;

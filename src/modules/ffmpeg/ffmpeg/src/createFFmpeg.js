@@ -2,12 +2,12 @@ const { defaultArgs, baseOptions } = require('./config');
 const { setLogging, setCustomLogger, log } = require('./utils/log');
 const parseProgress = require('./utils/parseProgress');
 const parseArgs = require('./utils/parseArgs');
-const { defaultOptions, getCreateFFmpegCore } = require('./node');
+const { defaultOptions, getCreateFFmpegCore } = require('./browser');
 const { version } = require('../package.json');
 
 const NO_LOAD = Error('ffmpeg.wasm is not ready, make sure you have completed load().');
 
-module.exports = (_options = {}) => {
+const module = (_options = {}) => {
   const {
     log: logging,
     logger,
@@ -227,3 +227,5 @@ module.exports = (_options = {}) => {
     WORKERFS,
   };
 };
+
+export default module;
