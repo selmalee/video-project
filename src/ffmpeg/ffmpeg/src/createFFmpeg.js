@@ -52,43 +52,43 @@ module.exports = (_options = {}) => {
     if (Core === null) {
       log('info', 'loading ffmpeg-core');
       /*
-       * In node environment, all paths are undefined as there
-       * is no need to set them.
-       */
+        * In node environment, all paths are undefined as there
+        * is no need to set them.
+        */
       const {
         createFFmpegCore,
         corePath,
-        workerPath,
+        // workerPath,
         wasmPath,
       } = await getCreateFFmpegCore(options);
+      // console.log('load', window)
       Core = await createFFmpegCore({
         /*
-         * Assign mainScriptUrlOrBlob fixes chrome extension web worker issue
-         * as there is no document.currentScript in the context of content_scripts
-         */
+          * Assign mainScriptUrlOrBlob fixes chrome extension web worker issue
+          * as there is no document.currentScript in the context of content_scripts
+          */
         mainScriptUrlOrBlob: corePath,
         printErr: (message) => parseMessage({ type: 'fferr', message }),
         print: (message) => parseMessage({ type: 'ffout', message }),
         /*
-         * locateFile overrides paths of files that is loaded by main script (ffmpeg-core.js).
-         * It is critical for browser environment and we override both wasm and worker paths
-         * as we are using blob URL instead of original URL to avoid cross origin issues.
-         */
+          * locateFile overrides paths of files that is loaded by main script (ffmpeg-core.js).
+          * It is critical for browser environment and we override both wasm and worker paths
+          * as we are using blob URL instead of original URL to avoid cross origin issues.
+          */
         locateFile: (path, prefix) => {
-          if (typeof window !== 'undefined') {
+          // if (typeof window !== 'undefined') {
             if (typeof wasmPath !== 'undefined'
               && path.endsWith('ffmpeg-core.wasm')) {
               return wasmPath;
             }
-            if (typeof workerPath !== 'undefined'
-              && path.endsWith('ffmpeg-core.worker.js')) {
-              return workerPath;
-            }
-          }
+            // if (typeof workerPath !== 'undefined'
+            //   && path.endsWith('ffmpeg-core.worker.js')) {
+            //   return workerPath;
+            // }
+          // }
           return prefix + path;
         },
       });
-      console.log(options)
       ffmpeg = Core.cwrap(options.mainName || 'proxy_main', 'number', ['number', 'number']);
       log('info', 'ffmpeg-core loaded');
     } else {
@@ -121,6 +121,7 @@ module.exports = (_options = {}) => {
    */
   const run = (..._args) => {
     log('info', `run ffmpeg command: ${_args.join(' ')}`);
+    // console.log('run', window)
     if (Core === null) {
       throw NO_LOAD;
     } else if (running) {
@@ -171,6 +172,17 @@ module.exports = (_options = {}) => {
     }
   };
 
+  const WORKERFS = (file, dir) => {
+    let ret = null;
+    try {
+      Core.FS.mkdir(dir);
+      ret = Core.FS.mount(Core.FS.filesystems.WORKERFS, { files: [file] }, dir);
+    } catch(e) {
+      console.error(e)
+    }
+    return ret;
+  };
+
   /**
    * forcibly terminate the ffmpeg program.
    */
@@ -179,7 +191,11 @@ module.exports = (_options = {}) => {
       throw NO_LOAD;
     } else {
       running = false;
-      Core.exit(1);
+      try {
+        Core.exit(1);
+      } catch(e) {
+        console.log('catch core exit error', e);
+      }
       Core = null;
       ffmpeg = null;
       runResolve = null;
@@ -208,5 +224,6 @@ module.exports = (_options = {}) => {
     run,
     exit,
     FS,
+    WORKERFS,
   };
 };

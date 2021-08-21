@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
-const resolveURL = require('resolve-url');
+// const resolveURL = require('resolve-url');
 const { log } = require('../utils/log');
+const createFFmpegCore = require('../../../core/ffmpeg-core-v1.0.2.js');
 
 /*
  * Fetch data from remote URL and convert to blob URL
@@ -16,23 +17,23 @@ const toBlobURL = async (url, mimeType) => {
   return blobURL;
 };
 
-module.exports = async ({ corePath: _corePath }) => {
+module.exports = async ({ corePath: _corePath, wasmPath: _wasmPath }) => {
   if (typeof _corePath !== 'string') {
     throw Error('corePath should be a string!');
   }
-  const coreRemotePath = resolveURL(_corePath);
+  // const coreRemotePath = resolveURL(_corePath);
   const corePath = await toBlobURL(
-    coreRemotePath,
+    _corePath,
     'application/javascript',
   );
   const wasmPath = await toBlobURL(
-    coreRemotePath.replace('ffmpeg-core.js', 'ffmpeg-core.wasm'),
+    _wasmPath,
     'application/wasm',
   );
-  const workerPath = await toBlobURL(
-    coreRemotePath.replace('ffmpeg-core.js', 'ffmpeg-core.worker.js'),
-    'application/javascript',
-  );
+  // const workerPath = await toBlobURL(
+  //   coreRemotePath.replace('ffmpeg-core.js', 'ffmpeg-core.worker.js'),
+  //   'application/javascript',
+  // );
   if (typeof createFFmpegCore === 'undefined') {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -43,7 +44,7 @@ module.exports = async ({ corePath: _corePath }) => {
           createFFmpegCore,
           corePath,
           wasmPath,
-          workerPath,
+          // workerPath,
         });
       };
       script.src = corePath;
@@ -57,6 +58,6 @@ module.exports = async ({ corePath: _corePath }) => {
     createFFmpegCore,
     corePath,
     wasmPath,
-    workerPath,
+    // workerPath,
   });
 };
