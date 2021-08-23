@@ -1,0 +1,26 @@
+.bg {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  background-color: #000;
+  overflow: hidden;
+}
+.point {
+  position: absolute;
+  background-color: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: 6s snow linear infinite;
+  transform: translate(0, -400px);
+}
+
+@keyframes snow {
+  // from { transform: scaleX(0); }
+  // to   { transform: scaleX(1); }
+  0% {
+    transform: translate(0, -400px);
+  }
+  100% {
+    transform: translate(40px, 400px);
+  }
+}

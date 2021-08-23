@@ -24,6 +24,7 @@ import {
 } from "react-router-dom";
 import Frame from "./frame";
 import Live from "./live";
+import Snow from "./snow";
 
 export default function App() {
   return (
@@ -40,6 +41,9 @@ export default function App() {
             <li>
               <Link to="/live">直播拉流</Link>
             </li>
+            <li>
+              <Link to="/snow">动画</Link>
+            </li>
           </ul>
         </nav>
 
@@ -51,6 +55,9 @@ export default function App() {
           </Route>
           <Route path="/live">
             <Live />
+          </Route>
+          <Route path="/snow">
+            <Snow />
           </Route>
           {/* <Route path="/">
             <Home />
